@@ -11,9 +11,8 @@ interface Message {
 }
 
 const AVAILABLE_MODELS: Model[] = [
-  { id: "gpt-4", name: "GPT-4" },
-  { id: "claude-2", name: "Claude 2" },
-  { id: "gpt-3.5", name: "GPT-3.5" },
+  { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
+  { id: "o1", name: "OpenAI O1" },
 ];
 
 const Index = () => {
@@ -41,8 +40,8 @@ const Index = () => {
       return;
     }
 
-    // Add user message
-    const newMessages = [...messages, { role: "user", content }];
+    const newMessage: Message = { role: "user", content };
+    const newMessages = [...messages, newMessage];
     setMessages(newMessages);
 
     // TODO: Implement actual API call to selected model
