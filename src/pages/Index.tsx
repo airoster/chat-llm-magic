@@ -38,6 +38,7 @@ const Index = () => {
   const callAnthropicAPI = async (content: string, apiKey: string) => {
     const anthropic = new Anthropic({
       apiKey: apiKey,
+      dangerouslyAllowBrowser: true // Enable browser usage
     });
 
     const response = await anthropic.messages.create({
@@ -46,7 +47,7 @@ const Index = () => {
       max_tokens: 1024,
     });
 
-    return response.content[0].text;
+    return response.content[0].value; // Changed from .text to .value
   };
 
   const callOpenAIAPI = async (content: string, apiKey: string) => {
