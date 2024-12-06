@@ -4,6 +4,7 @@ import { ChatInput } from "@/components/ChatInput";
 import { ModelSelector, type Model } from "@/components/ModelSelector";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
 import { useToast } from "@/components/ui/use-toast";
+import Anthropic from '@anthropic-ai/sdk';
 
 interface Message {
   role: "assistant" | "user";
@@ -35,26 +36,17 @@ const Index = () => {
   }, []);
 
   const callAnthropicAPI = async (content: string, apiKey: string) => {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        messages: [{ role: "user", content }],
-        max_tokens: 1024,
-      }),
+    const anthropic = new Anthropic({
+      apiKey: apiKey,
     });
 
-    if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.statusText}`);
-    }
+    const response = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      messages: [{ role: "user", content }],
+      max_tokens: 1024,
+    });
 
-    const data = await response.json();
-    return data.content[0].text;
+    return response.content[0].text;
   };
 
   const callOpenAIAPI = async (content: string, apiKey: string) => {
