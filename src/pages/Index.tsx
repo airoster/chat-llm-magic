@@ -38,7 +38,7 @@ const Index = () => {
   const callAnthropicAPI = async (content: string, apiKey: string) => {
     const anthropic = new Anthropic({
       apiKey: apiKey,
-      dangerouslyAllowBrowser: true // Enable browser usage
+      dangerouslyAllowBrowser: true
     });
 
     const response = await anthropic.messages.create({
@@ -47,12 +47,12 @@ const Index = () => {
       max_tokens: 1024,
     });
 
-    // Handle the response content safely
-    const messageContent = response.content[0].text;
-    if (!messageContent) {
+    // Handle the response content safely and preserve formatting
+    if (!response.content?.[0]) {
       throw new Error("No response content received from Claude");
     }
-    return messageContent;
+
+    return response.content[0].type === 'text' ? response.content[0].text : '';
   };
 
   const callOpenAIAPI = async (content: string, apiKey: string) => {
