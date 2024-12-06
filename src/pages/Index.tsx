@@ -47,7 +47,12 @@ const Index = () => {
       max_tokens: 1024,
     });
 
-    return response.content[0].value; // Changed from .text to .value
+    // Handle the response content safely
+    const messageContent = response.content[0].text;
+    if (!messageContent) {
+      throw new Error("No response content received from Claude");
+    }
+    return messageContent;
   };
 
   const callOpenAIAPI = async (content: string, apiKey: string) => {
