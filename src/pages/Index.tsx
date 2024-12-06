@@ -19,9 +19,9 @@ const Index = () => {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [selectedModel, setSelectedModel] = React.useState<Model>(AVAILABLE_MODELS[0]);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
 
-  // Load API keys from localStorage on mount
   React.useEffect(() => {
     const loadApiKeys = () => {
       AVAILABLE_MODELS.forEach((model) => {
@@ -34,6 +34,51 @@ const Index = () => {
     loadApiKeys();
   }, []);
 
+  const callAnthropicAPI = async (content: string, apiKey: string) => {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        messages: [{ role: "user", content }],
+        max_tokens: 1024,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Anthropic API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.content[0].text;
+  };
+
+  const callOpenAIAPI = async (content: string, apiKey: string) => {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "o1",
+        messages: [{ role: "user", content }],
+        max_tokens: 1024,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  };
+
   const handleSendMessage = async (content: string) => {
     if (!selectedModel.apiKey) {
       setIsApiKeyModalOpen(true);
@@ -43,18 +88,32 @@ const Index = () => {
     const newMessage: Message = { role: "user", content };
     const newMessages = [...messages, newMessage];
     setMessages(newMessages);
+    setIsLoading(true);
 
-    // TODO: Implement actual API call to selected model
-    // For now, just echo the message
-    setTimeout(() => {
+    try {
+      let response;
+      if (selectedModel.id === "claude-3-5-sonnet-20241022") {
+        response = await callAnthropicAPI(content, selectedModel.apiKey);
+      } else {
+        response = await callOpenAIAPI(content, selectedModel.apiKey);
+      }
+
       setMessages([
         ...newMessages,
         {
           role: "assistant",
-          content: `[${selectedModel.name}] Echo: ${content}`,
+          content: response,
         },
       ]);
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to get response from AI",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSaveApiKey = (apiKey: string) => {
@@ -70,7 +129,6 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen bg-chat-background">
-      {/* Header */}
       <header className="p-4 border-b border-chat-border bg-white">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-semibold text-chat-text">Multi-LLM Chat</h1>
@@ -82,7 +140,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto">
         {messages.map((message, index) => (
           <ChatMessage
@@ -93,10 +150,8 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Chat Input */}
-      <ChatInput onSend={handleSendMessage} />
+      <ChatInput onSend={handleSendMessage} disabled={isLoading} />
 
-      {/* API Key Modal */}
       <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
