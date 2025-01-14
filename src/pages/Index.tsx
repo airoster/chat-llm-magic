@@ -36,6 +36,22 @@ const Index = () => {
   }, []);
 
   const callAnthropicAPI = async (content: string, apiKey: string) => {
+    // Create initial board state
+    const initialBoard = [
+      ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],  // Black pieces
+      ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],  // Black pawns
+      ['.', '.', '.', '.', '.', '.', '.', '.'],   // Empty squares
+      ['.', '.', '.', '.', '.', '.', '.', '.'],   // Empty squares
+      ['.', '.', '.', '.', '.', '.', '.', '.'],   // Empty squares
+      ['.', '.', '.', '.', '.', '.', '.', '.'],   // Empty squares
+      ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],  // White pawns
+      ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']   // White pieces
+    ];
+
+    // Format board as a string
+    const boardString = initialBoard.map(row => row.join(' ')).join('\n');
+    const prompt = `Here is the current chess board state:\n\n${boardString}\n\n${content}`;
+
     const anthropic = new Anthropic({
       apiKey: apiKey,
       dangerouslyAllowBrowser: true
@@ -43,7 +59,7 @@ const Index = () => {
 
     const response = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",
-      messages: [{ role: "user", content }],
+      messages: [{ role: "user", content: prompt }],
       max_tokens: 1024,
     });
 
